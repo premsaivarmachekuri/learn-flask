@@ -5,13 +5,15 @@ from sqlalchemy.sql import func
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-appli = Flask(__name__)
+app = Flask(__name__)
 
-appli.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///' + os.path.join(basedir, 'database.db')
-appli.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(appli) 
-# db.init_app(app)
+db = SQLAlchemy(app)
+with app.app_context():
+    db.create_all() 
+
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,11 +28,20 @@ class Student(db.Model):
         return f'<Student {self.firstname}>'
     
 
-@appli.route("/")
+@app.route("/")
 def index():
     students = Student.query.all()
     return render_template('index.html', students=students)
 
+@app.route("/<int:student_id>/")
+def get_student(student_id):
+    student = Student.query.get_or_404(student_id)
+    return render_template('student.html', student=student)
+
+@app.route('/create/', methods=('GET', 'POST'))
+def create():
+    return render_template('create.html')
+
 
 if __name__== '__main__':
-    appli.run(debug=True, host='0.0.0.0', port='7000')
+    app.run(debug=True, host='0.0.0.0', port='7000')
